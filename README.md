@@ -13,6 +13,10 @@ Docker compose is used to create the following containers:
 * Run Web Worker (inc celery)
 * Run nginx (with SSL and certs)
 
+## Todo
+- [ ] Make compose file for running locally with python and react hotloading
+- [ ] Make env files for RabbitMQ and Postgres username and password
+
 ## Instructions 
 
 1. Git clone this repo and cd DIVE-docker
