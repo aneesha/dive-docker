@@ -1,0 +1,23 @@
+##########
+# Downloads & compiles create-react-app, saving built app to shared volume
+###########
+
+FROM node
+
+WORKDIR /app
+
+# Included because repo was being cached and not reflecting code changes
+# From https://github.com/moby/moby/issues/22832
+ARG CACHE_DATE=2016-01-10
+
+RUN git clone https://github.com/aneesha/DIVE-frontend.git .
+
+WORKDIR app
+
+RUN yarn cache clean
+
+RUN yarn
+
+RUN yarn build
+
+#RUN echo $(ls -1 /app/dist)

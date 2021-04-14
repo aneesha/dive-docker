@@ -1,0 +1,92 @@
+version: '3'
+services:
+    rabbit:
+        hostname: rabbit
+        image: rabbitmq:latest
+        environment:
+        - RABBITMQ_DEFAULT_USER=admin
+        - RABBITMQ_DEFAULT_PASS=mypass
+    db:
+        image: postgres:12-alpine
+        volumes:
+        - postgres_data:/var/lib/postgresql/data/
+        environment:
+        - POSTGRES_USER=divedb_user
+        - POSTGRES_PASSWORD=divedb_pass
+        - POSTGRES_DB=divedb_prod
+        ports:
+        - "5432:5432"
+    dive-worker:
+        build:
+            context: ./dive-api
+            dockerfile: Worker_Dockerfile
+        #command: celery worker -E --app=dive.worker.core --autoscale=10,3 --loglevel=DEBUG
+        command: celery -A dive.worker.core worker --loglevel INFO
+        volumes:
+            - uploads:/usr/src/app/uploads/
+        links:
+            - rabbit
+        depends_on:
+            - rabbit
+    dive-frontend:
+        build:
+            context: DIVE-frontend
+            dockerfile: Dockerfile.prod
+        volumes:
+            -  static-ui-content:/app/dist
+    dive-api:
+        build: ./dive-api
+        #command: python /web/run_server.py
+        #command: python manage.py run -h 0.0.0.0
+        volumes:
+            - uploads:/usr/src/app/uploads/
+        #ports:
+        #    - 8081:8081
+        expose:
+            - 8081
+        env_file:
+            - ./.env.dev
+        depends_on:
+            - db
+            - dive-worker
+    #web:
+    #    build: ./web
+    #    command: python manage.py run -h 0.0.0.0
+    #    volumes:
+    #        - ./web/:/usr/src/app/
+    #    ports:
+    #        - 5000:5000
+    #    env_file:
+    #        - ./.env.dev
+    #    depends_on:
+    #        - db
+    #api:
+    #    build:
+    #        context: api
+    #        dockerfile: Dockerfile.prod
+    #    networks:
+    #        - web_nw
+    proxy:
+        build:
+            context: proxy
+            dockerfile: Dockerfile.prod
+        volumes:
+            -  static-ui-content:/app/dist
+        depends_on:
+            - dive-frontend
+            - rabbit
+            - dive-worker
+            - dive-api
+        ports:
+            - "80:80"
+            - "443:443"
+        #networks:
+        #    - web_nw
+#networks:
+#    web_nw:
+#       driver: bridge
+volumes:
+    static-ui-content:
+    postgres_data:
+    uploads:
+    #api:
